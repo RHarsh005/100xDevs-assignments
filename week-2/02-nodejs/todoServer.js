@@ -39,11 +39,159 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  module.exports = app;
+const express = require("express");
+// const fs = require("fs");
+const bodyParser = require("body-parser");
+
+const app = express();
+
+app.use(bodyParser.json());
+
+// function readTodos() {
+//   return fs.readFileSync("./files/todo.json", "utf-8", (err, data) => {
+//     if (err) console.error(err);
+//     return data;
+//   });
+// }
+
+// function saveTodos() {
+//   return fs.writeFileSync("Todolist.txt", "--- content ---", (err) => {
+//     if (err) console.error(err);
+//   });
+// }
+
+// const todos = [
+//   { title: "sold groceries", completed: false, description: "I should buy groceries", id: 123 },
+//   { title: "Buy", completed: false, description: "I", id: 12 },
+// ];
+
+const todos = [];
+
+function findObj(id) {
+  // console.log(todos.length);
+  for (let i = 0; i < todos.length; i++) {
+    // console.log(todos[i].id === id);
+    if (todos[i].id === id) return i;
+  }
+  // const ans = todos.find((t, index) => t.id === Number(id));
+  // console.log(ans);
+  return -1;
+}
+
+app.get("/todos", (req, res) => {
+  console.log(req.params);
+  try {
+    let data = todos;
+    if (req.params.id) {
+      data = findObj(Number(req.params.id));
+      // console.log(data);
+      if (data == -1) {
+        throw new Error("data not found");
+      } else {
+        data = todos[data];
+      }
+    }
+
+    res.status(200).send(data);
+  } catch (err) {
+    res.status(404).send({
+      Error: err,
+      message: err.message,
+    });
+  }
+});
+
+// app.get("/todos/:id", (req, res) => {
+//   console.log(req.params.id);
+//   try {
+//     // const data = readTodos();
+//     console.log("with id");
+//     // res.status(200).send(JSON.parse(data));
+//   } catch (err) {
+//     res.status(404).send({
+//       Error: err,
+//     });
+//   }
+// });
+
+app.post("/todos", (req, res) => {
+  try {
+    if (Object.keys(req.body).length === 0) {
+      throw new Error("got empty json data");
+    }
+    const newObj = req.body;
+    newObj.id = Math.floor(Math.random() * 1000000);
+    todos.push(newObj);
+
+    res.status(201).send({
+      status: "ok",
+      message: "data added successfully",
+    });
+  } catch (err) {
+    res.status(404).send(err.message);
+  }
+});
+
+app.put("/todos", (req, res) => {
+  // let data = todos;
+
+  try {
+    if (Object.keys(req.body).length === 0) {
+      throw new Error("got empty json data");
+    }
+
+    // if (req.params) {
+    let data = findObj(Number(req.params.id));
+
+    if (data == -1) {
+      throw new Error("data not found");
+    } else {
+      todos[data].title = req.body.title;
+      // todos[data].completed = req.body.completed;
+      todos[data].description = req.body.description;
+
+      res.status(200).send({
+        status: "ok",
+        message: "successfully updated",
+      });
+    }
+    // }
+  } catch (err) {
+    res.status(404).send({
+      Error: err,
+      message: err.message,
+    });
+  }
+});
+
+app.delete("/todos", (req, res) => {
+  try {
+    console.log(req.params);
+    // if (req.query) {
+    let data = findObj(Number(req.params.id));
+    if (data === -1) {
+      throw new Error("data not found");
+    } else {
+      // console.log("data => ", data);
+      todos.splice(data, 1);
+      res.status(200).send();
+    }
+    // }
+
+    // console.log(todos);
+  } catch (err) {
+    res.status(404).send({
+      Error: err,
+      // message: err.message,
+    });
+  }
+});
+
+app.all("*", (req, res) => {
+  res.status(404).send("Route not found");
+});
+
+app.listen(4000, function () {
+  console.log(`Server running at ${4000}`);
+});
+module.exports = app;
